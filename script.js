@@ -83,6 +83,17 @@ const displayMovements = function (movements) {
 
 displayMovements(account1.movements);
 
+// Функция рассчитывает сумму всех транзакции и выводит это в балансе аккаунта
+const calcDisplayBalance = function (movements) {
+    const balance = movements.reduce((accum, value) => accum + value, 0);
+    // Выводим баланс счета на страницу
+    // const labelBalance = document.querySelector('.balance__value');
+    labelBalance.textContent = `${balance} RUB`;
+};
+
+calcDisplayBalance(account1.movements);
+
+// Функция возвращает инициалы пользователя в обьекты account(
 const createUserInitial = function (accs) {
     // Применяем метод forEach, т.к. не нужно создавать и возвращать новый массив, а мы просто хотим слегка модифицировать уже сущ-ий
     accs.forEach(function (account) {
