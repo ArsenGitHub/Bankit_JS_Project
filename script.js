@@ -1,9 +1,5 @@
 'use strict';
 
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-// BANKIST APP
-
 // Data
 const account1 = {
     owner: 'Jonas Schmedtmann',
@@ -86,3 +82,17 @@ const displayMovements = function (movements) {
 };
 
 displayMovements(account1.movements);
+
+const createUserInitial = function (accs) {
+    // Применяем метод forEach, т.к. не нужно создавать и возвращать новый массив, а мы просто хотим слегка модифицировать уже сущ-ий
+    accs.forEach(function (account) {
+        // Получаем обьекты account1, account2... и к каждому добваляем новое св-во account.userNameInitial,  account.owner-получаем св-во owner из обьекта(Имя Фамилия)
+        account.userNameInitial = account.owner
+            .toLowerCase() //меняем регистр
+            .split(' ') //засовываем все в массив, знач-я [имя, фамилия]
+            .map((name) => name[0]) //возвр-ем новый массив, знач-я [и, ф]
+            .join(''); //обьединяем знач-я массива в одну общую строку "иф"
+    });
+};
+
+createUserInitial(accounts);
