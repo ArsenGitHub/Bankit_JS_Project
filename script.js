@@ -57,26 +57,21 @@ const inputLoanAmount = document.querySelector('.form__input--loan-amount');
 const inputCloseUsername = document.querySelector('.form__input--user');
 const inputClosePin = document.querySelector('.form__input--pin');
 
-// При работе с данными со страницы, ВСЕГДА лучше создавать функцию, которая НАПРЯМУЮ со страницы ПОЛУЧАЕТ ДАННЫЕ и НЕ СОЗДАВАТЬ переменную в глобальном контексте выполненения(ПРИВАТНОСТЬ ДАННЫХ)
-
 // Функция будет отображать снятие и поступление средств на счет и будет принимать данные из массива
 const displayMovements = function (movements) {
-    // Посредством св-ва innerHTML(возвращает html дочерних элементов) удаляем изначальную верстку блока "movements", т.к. она нужна чисто как шаблон
     containerMovements.innerHTML = '';
     movements.forEach(function (mov, index) {
-        // Создаем тернарный оператор(ternary operator) , который будет определять, снятие это или пополнение счета, нужны в двух местах, чтобы менять класс html и выводить текст
         const operation = mov > 0 ? 'deposit' : 'withdrawal';
-
-        // Для того, чтобы создать такую же структуру html как в верстке, копируем ее с верстки и вставляем в шаблонную строку(template literal). Верстка здесь воспринимается просто как текст, поэтому
         const html = `
       <div class="movements__row">
           <div class="movements__type movements__type--${operation}">${
             index + 1
         } ${operation}</div>
-          <div class="movements__value">${mov}</div>
+          <div class="movements__value">${mov} RUB</div>
       </div>
       `;
-        // containerMovements - переменная, которая содержит(querySelector) родительский блок "movements", куда добавляется верстка методом insertAdjacentHTML()
+
+        // const containerMovements = document.querySelector('.movements');
         containerMovements.insertAdjacentHTML('afterbegin', html);
     });
 };
@@ -86,18 +81,39 @@ displayMovements(account1.movements);
 // Функция рассчитывает сумму всех транзакции и выводит это в балансе аккаунта
 const calcDisplayBalance = function (movements) {
     const balance = movements.reduce((accum, value) => accum + value, 0);
-    // Выводим баланс счета на страницу
+
     // const labelBalance = document.querySelector('.balance__value');
     labelBalance.textContent = `${balance} RUB`;
 };
 
 calcDisplayBalance(account1.movements);
 
+// Функция рассчитывает суммарный депосит, снятие и процент "вклада" и выводит в отдельные окошки
+const calcDisplaySummary = function (movements) {
+    const depositsSum = movements
+        .filter((money) => money > 0)
+        .reduce((accum, deposit) => accum + deposit, 0);
+    const withdrawalSum = movements
+        .filter((money) => money < 0)
+        .reduce((accum, withdrawal) => accum + withdrawal, 0);
+    const interestSum = movements
+        .filter((money) => money > 0)
+        .map((deposit) => deposit * 0.012)
+        .filter((interest) => interest >= 1)
+        .reduce((accum, interest) => accum + interest, 0);
+
+    // const labelSumIn = document.querySelector('.summary__value--in');
+    // const labelSumOut = document.querySelector('.summary__value--out');
+    labelSumIn.textContent = `${depositsSum} RUB`;
+    labelSumOut.textContent = `${Math.abs(withdrawalSum)} RUB`;
+    labelSumInterest.textContent = `${interestSum} RUB`;
+};
+
+calcDisplaySummary(account1.movements);
+
 // Функция возвращает инициалы пользователя в обьекты account(
 const createUserInitial = function (accs) {
-    // Применяем метод forEach, т.к. не нужно создавать и возвращать новый массив, а мы просто хотим слегка модифицировать уже сущ-ий
     accs.forEach(function (account) {
-        // Получаем обьекты account1, account2... и к каждому добваляем новое св-во account.userNameInitial,  account.owner-получаем св-во owner из обьекта(Имя Фамилия)
         account.userNameInitial = account.owner
             .toLowerCase() //меняем регистр
             .split(' ') //засовываем все в массив, знач-я [имя, фамилия]
