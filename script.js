@@ -40,6 +40,7 @@ const labelSumOut = document.querySelector('.summary__value--out');
 const labelSumInterest = document.querySelector('.summary__value--interest');
 const labelTimer = document.querySelector('.timer');
 
+const loginForm = document.querySelector('.login');
 const containerApp = document.querySelector('.app');
 const containerMovements = document.querySelector('.movements');
 
@@ -70,56 +71,66 @@ const displayMovements = function (movements) {
           <div class="movements__value">${mov} RUB</div>
       </div>
       `;
-
-        // const containerMovements = document.querySelector('.movements');
         containerMovements.insertAdjacentHTML('afterbegin', html);
     });
 };
 
-displayMovements(account1.movements);
-
 // Функция рассчитывает сумму всех транзакции и выводит это в балансе аккаунта
 const calcDisplayBalance = function (movements) {
     const balance = movements.reduce((accum, value) => accum + value, 0);
-
-    // const labelBalance = document.querySelector('.balance__value');
     labelBalance.textContent = `${balance} RUB`;
 };
 
-calcDisplayBalance(account1.movements);
-
-// Функция рассчитывает суммарный депосит, снятие и процент "вклада" и выводит в отдельные окошки
-const calcDisplaySummary = function (movements) {
-    const depositsSum = movements
+// Функция рассчитывает суммарный депозит, снятие и процент "вклада" и выводит в отдельные окошки
+const calcDisplaySummary = function (account) {
+    const depositsSum = account.movements
         .filter((money) => money > 0)
         .reduce((accum, deposit) => accum + deposit, 0);
-    const withdrawalSum = movements
+    const withdrawalSum = account.movements
         .filter((money) => money < 0)
         .reduce((accum, withdrawal) => accum + withdrawal, 0);
-    const interestSum = movements
+    const interestSum = account.movements
         .filter((money) => money > 0)
-        .map((deposit) => deposit * 0.012)
+        .map((deposit) => (deposit * account.interestRate) / 100)
         .filter((interest) => interest >= 1)
         .reduce((accum, interest) => accum + interest, 0);
 
-    // const labelSumIn = document.querySelector('.summary__value--in');
-    // const labelSumOut = document.querySelector('.summary__value--out');
     labelSumIn.textContent = `${depositsSum} RUB`;
     labelSumOut.textContent = `${Math.abs(withdrawalSum)} RUB`;
     labelSumInterest.textContent = `${interestSum} RUB`;
 };
 
-calcDisplaySummary(account1.movements);
-
 // Функция возвращает инициалы пользователя в обьекты account(
 const createUserInitial = function (accs) {
     accs.forEach(function (account) {
         account.userNameInitial = account.owner
-            .toLowerCase() //меняем регистр
-            .split(' ') //засовываем все в массив, знач-я [имя, фамилия]
-            .map((name) => name[0]) //возвр-ем новый массив, знач-я [и, ф]
-            .join(''); //обьединяем знач-я массива в одну общую строку "иф"
+            .toLowerCase()
+            .split(' ')
+            .map((name) => name[0])
+            .join('');
     });
 };
 
 createUserInitial(accounts);
+
+// Хранит текущий аккаунт
+let currentAccount;
+
+// Событие входа в аккаунт
+btnLogin.addEventListener('click', function (e) {
+    e.preventDefault();
+    currentAccount = accounts.find(
+        (account) => account.userNameInitial === inputLoginUsername.value
+    );
+    if (inputLoginPin?.value === String(currentAccount.pin)) {
+        displayMovements(currentAccount.movements);
+        calcDisplayBalance(currentAccount.movements);
+        calcDisplaySummary(currentAccount);
+
+        loginForm.style.opacity = 0;
+        labelWelcome.textContent = `Welcome back ${currentAccount.owner}`;
+        containerApp.style.opacity = '1';
+    } else {
+        alert('Wrong User name or password!');
+    }
+});
