@@ -127,10 +127,20 @@ btnLogin.addEventListener('click', function (e) {
         calcDisplayBalance(currentAccount.movements);
         calcDisplaySummary(currentAccount);
 
-        loginForm.style.opacity = 0;
         labelWelcome.textContent = `Welcome back ${currentAccount.owner}`;
         containerApp.style.opacity = '1';
+        loginForm.style.opacity = 0;
     } else {
         alert('Wrong User name or password!');
     }
+});
+
+// Выход с акка
+document.querySelector('.logo').addEventListener('click', function (e) {
+    loginForm.style.opacity = 1;
+    containerApp.style.opacity = '0';
+    labelWelcome.textContent = `Log in to get started`;
+
+    inputLoginUsername.value = '';
+    inputLoginPin.value = '';
 });

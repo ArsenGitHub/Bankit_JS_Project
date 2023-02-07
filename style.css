@@ -39,6 +39,11 @@ nav {
     height: 5.25rem;
 }
 
+.logo:active {
+    transform: scale(0.75);
+    transition: all 0.75s;
+}
+
 .login {
     display: flex;
 }
@@ -95,7 +100,7 @@ nav {
 
     /* NOTE This creates the fade in/out anumation */
     opacity: 0;
-    transition: all 3s;
+    transition: all 1s;
 }
 
 .balance {
