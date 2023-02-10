@@ -77,8 +77,12 @@ const displayMovements = function (movements) {
 
 // Функция рассчитывает сумму всех транзакции и выводит это в балансе аккаунта
 const calcDisplayBalance = function (movements) {
-    const balance = movements.reduce((accum, value) => accum + value, 0);
-    labelBalance.textContent = `${balance} RUB`;
+    // Поменял, чтобы баланс добавлялся в св-во обьекта, т.к. баланс нужен и в другой функции
+    currentAccount.balance = movements.reduce(
+        (accum, value) => accum + value,
+        0
+    );
+    labelBalance.textContent = `${currentAccount.balance} RUB`;
 };
 
 // Функция рассчитывает суммарный депозит, снятие и процент "вклада" и выводит в отдельные окошки
@@ -111,6 +115,14 @@ const createUserInitial = function (accs) {
     });
 };
 
+// Функция для обновления интерфейса(новые переводы)
+const updateUI = function (acc) {
+    displayMovements(acc.movements);
+    calcDisplayBalance(acc.movements);
+    calcDisplaySummary(acc);
+};
+
+// Добавляем инициалы аккаунтов в обьекты аккаунтов
 createUserInitial(accounts);
 
 // Хранит текущий аккаунт
@@ -123,9 +135,8 @@ btnLogin.addEventListener('click', function (e) {
         (account) => account.userNameInitial === inputLoginUsername.value
     );
     if (inputLoginPin?.value === String(currentAccount.pin)) {
-        displayMovements(currentAccount.movements);
-        calcDisplayBalance(currentAccount.movements);
-        calcDisplaySummary(currentAccount);
+        // Сделал рефакторинг
+        updateUI(currentAccount);
 
         labelWelcome.textContent = `Welcome back ${currentAccount.owner}`;
         containerApp.style.opacity = '1';
@@ -135,12 +146,42 @@ btnLogin.addEventListener('click', function (e) {
     }
 });
 
-// Выход с акка
+// Событие выхода c аккаунта
 document.querySelector('.logo').addEventListener('click', function (e) {
     loginForm.style.opacity = 1;
     containerApp.style.opacity = '0';
     labelWelcome.textContent = `Log in to get started`;
 
-    inputLoginUsername.value = '';
-    inputLoginPin.value = '';
+    inputLoginUsername.value = inputLoginPin.value = '';
+});
+
+// Событие перевода денег на другой аккаунт
+btnTransfer.addEventListener('click', function (e) {
+    e.preventDefault();
+
+    const transferAmount = Number(inputTransferAmount.value);
+    const recipient = accounts.find(
+        (account) =>
+            account.owner ===
+            inputTransferTo.value
+                .toLowerCase()
+                .split(' ')
+                .map((name) => name.replace(name[0], name[0].toUpperCase()))
+                .join(' ')
+    );
+
+    if (transferAmount <= currentAccount.balance && transferAmount > 0) {
+        if (recipient && currentAccount.owner !== recipient.owner) {
+            currentAccount.movements.push(transferAmount * -1);
+            recipient.movements.push(transferAmount);
+
+            updateUI(currentAccount);
+            inputTransferTo.value = inputTransferAmount.value = '';
+        } else {
+            alert('Wrong recipient');
+        }
+    } else {
+        inputTransferAmount.value = '';
+        alert('Wrong amount of money');
+    }
 });
