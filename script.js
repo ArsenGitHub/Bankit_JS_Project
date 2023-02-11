@@ -77,7 +77,6 @@ const displayMovements = function (movements) {
 
 // Функция рассчитывает сумму всех транзакции и выводит это в балансе аккаунта
 const calcDisplayBalance = function (movements) {
-    // Поменял, чтобы баланс добавлялся в св-во обьекта, т.к. баланс нужен и в другой функции
     currentAccount.balance = movements.reduce(
         (accum, value) => accum + value,
         0
@@ -122,6 +121,16 @@ const updateUI = function (acc) {
     calcDisplaySummary(acc);
 };
 
+// Функция для выхода с аккаунта
+const logout = function () {
+    loginForm.style.opacity = 1;
+    containerApp.style.opacity = '0';
+    labelWelcome.textContent = `Log in to get started`;
+
+    inputTransferTo.value = inputTransferAmount.value = '';
+    inputLoginUsername.value = inputLoginPin.value = '';
+};
+
 // Добавляем инициалы аккаунтов в обьекты аккаунтов
 createUserInitial(accounts);
 
@@ -132,10 +141,10 @@ let currentAccount;
 btnLogin.addEventListener('click', function (e) {
     e.preventDefault();
     currentAccount = accounts.find(
-        (account) => account.userNameInitial === inputLoginUsername.value
+        (account) =>
+            account.userNameInitial === inputLoginUsername.value.toLowerCase()
     );
-    if (inputLoginPin?.value === String(currentAccount.pin)) {
-        // Сделал рефакторинг
+    if (inputLoginPin?.value === String(currentAccount?.pin)) {
         updateUI(currentAccount);
 
         labelWelcome.textContent = `Welcome back ${currentAccount.owner}`;
@@ -148,11 +157,7 @@ btnLogin.addEventListener('click', function (e) {
 
 // Событие выхода c аккаунта
 document.querySelector('.logo').addEventListener('click', function (e) {
-    loginForm.style.opacity = 1;
-    containerApp.style.opacity = '0';
-    labelWelcome.textContent = `Log in to get started`;
-
-    inputLoginUsername.value = inputLoginPin.value = '';
+    logout();
 });
 
 // Событие перевода денег на другой аккаунт
@@ -183,5 +188,30 @@ btnTransfer.addEventListener('click', function (e) {
     } else {
         inputTransferAmount.value = '';
         alert('Wrong amount of money');
+    }
+});
+
+// Событие удаление аккаунта
+btnClose.addEventListener('click', function (e) {
+    e.preventDefault();
+
+    const user = inputCloseUsername.value.toLowerCase();
+    const pin = Number(inputClosePin.value);
+    const accountIndex = accounts.findIndex(
+        (acc) => acc.userNameInitial === user
+    );
+    if (user === currentAccount.userNameInitial) {
+        if (pin === currentAccount.pin) {
+            // удаляем аккаунт из массива с аккаунтами
+            accounts.splice(accountIndex, 1);
+
+            logout(); // выход с аккаунта
+        } else {
+            inputClosePin.value = '';
+            alert('Wrong password!');
+        }
+    } else {
+        inputCloseUsername.value = '';
+        alert('Wrong user name!');
     }
 });
