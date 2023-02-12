@@ -58,6 +58,12 @@ const inputLoanAmount = document.querySelector('.form__input--loan-amount');
 const inputCloseUsername = document.querySelector('.form__input--user');
 const inputClosePin = document.querySelector('.form__input--pin');
 
+// Хранит текущий аккаунт
+let currentAccount;
+
+// Хранит текущую валюту
+let currentCurrency = 'RUB';
+
 // Функция будет отображать снятие и поступление средств на счет и будет принимать данные из массива
 const displayMovements = function (movements) {
     containerMovements.innerHTML = '';
@@ -68,7 +74,7 @@ const displayMovements = function (movements) {
           <div class="movements__type movements__type--${operation}">${
             index + 1
         } ${operation}</div>
-          <div class="movements__value">${mov} RUB</div>
+          <div class="movements__value">${mov} ${currentCurrency}</div>
       </div>
       `;
         containerMovements.insertAdjacentHTML('afterbegin', html);
@@ -81,7 +87,7 @@ const calcDisplayBalance = function (movements) {
         (accum, value) => accum + value,
         0
     );
-    labelBalance.textContent = `${currentAccount.balance} RUB`;
+    labelBalance.textContent = `${currentAccount.balance} ${currentCurrency}`;
 };
 
 // Функция рассчитывает суммарный депозит, снятие и процент "вклада" и выводит в отдельные окошки
@@ -98,9 +104,9 @@ const calcDisplaySummary = function (account) {
         .filter((interest) => interest >= 1)
         .reduce((accum, interest) => accum + interest, 0);
 
-    labelSumIn.textContent = `${depositsSum} RUB`;
-    labelSumOut.textContent = `${Math.abs(withdrawalSum)} RUB`;
-    labelSumInterest.textContent = `${interestSum} RUB`;
+    labelSumIn.textContent = `${depositsSum} ${currentCurrency}`;
+    labelSumOut.textContent = `${Math.abs(withdrawalSum)} ${currentCurrency}`;
+    labelSumInterest.textContent = `${interestSum} ${currentCurrency}`;
 };
 
 // Функция возвращает инициалы пользователя в обьекты account(
@@ -127,15 +133,18 @@ const logout = function () {
     containerApp.style.opacity = '0';
     labelWelcome.textContent = `Log in to get started`;
 
-    inputTransferTo.value = inputTransferAmount.value = '';
-    inputLoginUsername.value = inputLoginPin.value = '';
+    inputTransferTo.value =
+        inputTransferAmount.value =
+        inputLoginUsername.value =
+        inputLoginPin.value =
+        inputLoanAmount.value =
+        inputCloseUsername.value =
+        inputClosePin.value =
+            '';
 };
 
 // Добавляем инициалы аккаунтов в обьекты аккаунтов
 createUserInitial(accounts);
-
-// Хранит текущий аккаунт
-let currentAccount;
 
 // Событие входа в аккаунт
 btnLogin.addEventListener('click', function (e) {
@@ -175,16 +184,19 @@ btnTransfer.addEventListener('click', function (e) {
                 .join(' ')
     );
 
-    if (transferAmount <= currentAccount.balance && transferAmount > 0) {
-        if (recipient && currentAccount.owner !== recipient.owner) {
-            currentAccount.movements.push(transferAmount * -1);
-            recipient.movements.push(transferAmount);
+    if (
+        recipient &&
+        currentAccount.owner !== recipient.owner &&
+        transferAmount <= currentAccount.balance &&
+        transferAmount > 0
+    ) {
+        currentAccount.movements.push(transferAmount * -1);
+        recipient.movements.push(transferAmount);
 
-            updateUI(currentAccount);
-            inputTransferTo.value = inputTransferAmount.value = '';
-        } else {
-            alert('Wrong recipient');
-        }
+        updateUI(currentAccount);
+        inputTransferTo.value = inputTransferAmount.value = '';
+    } else if (!recipient || currentAccount.owner === recipient?.owner) {
+        alert('Wrong recipient');
     } else {
         inputTransferAmount.value = '';
         alert('Wrong amount of money');
@@ -200,18 +212,45 @@ btnClose.addEventListener('click', function (e) {
     const accountIndex = accounts.findIndex(
         (acc) => acc.userNameInitial === user
     );
-    if (user === currentAccount.userNameInitial) {
-        if (pin === currentAccount.pin) {
-            // удаляем аккаунт из массива с аккаунтами
-            accounts.splice(accountIndex, 1);
 
-            logout(); // выход с аккаунта
-        } else {
-            inputClosePin.value = '';
-            alert('Wrong password!');
-        }
-    } else {
+    if (user === currentAccount.userNameInitial && pin === currentAccount.pin) {
+        // удаляем аккаунт из массива с аккаунтами
+        accounts.splice(accountIndex, 1);
+
+        logout(); // выход с аккаунта
+    } else if (user !== currentAccount.userNameInitial) {
         inputCloseUsername.value = '';
         alert('Wrong user name!');
+    } else {
+        inputClosePin.value = '';
+        alert('Wrong password!');
+    }
+});
+
+// Событие взятие кредита(loan) с багом
+btnLoan.addEventListener('click', function (e) {
+    e.preventDefault();
+
+    const loanAmount = Number(inputLoanAmount.value);
+    const loanAgreement = currentAccount.movements.some(
+        (money) => money >= loanAmount * 0.1
+    );
+    if (loanAmount > 0 && loanAgreement) {
+        currentAccount.movements.push(loanAmount);
+        inputLoanAmount.value = '';
+
+        updateUI(currentAccount);
+    } else if (!loanAgreement) {
+        inputLoanAmount.value = '';
+        alert(
+            `Too much, your max. limit of loan is: ${
+                currentAccount.movements.reduce(
+                    (accum, money) => (accum < money ? money : accum),
+                    0
+                ) * 10
+            } ${currentCurrency}`
+        );
+    } else {
+        alert('Wrong amount of loan');
     }
 });
