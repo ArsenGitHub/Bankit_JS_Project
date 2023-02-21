@@ -64,10 +64,16 @@ let currentAccount;
 // Хранит текущую валюту
 let currentCurrency = 'RUB';
 
+// Хранит состояние сортировки переводов(при клике на сортировку => true)
+let sortState = false;
+
 // Функция будет отображать снятие и поступление средств на счет и будет принимать данные из массива
-const displayMovements = function (movements) {
+const displayMovements = function (movements, sort = false) {
+    const movs = sort ? movements.slice().sort((a, b) => a - b) : movements;
+
     containerMovements.innerHTML = '';
-    movements.forEach(function (mov, index) {
+
+    movs.forEach(function (mov, index) {
         const operation = mov > 0 ? 'deposit' : 'withdrawal';
         const html = `
       <div class="movements__row">
@@ -192,7 +198,6 @@ btnTransfer.addEventListener('click', function (e) {
     ) {
         currentAccount.movements.push(transferAmount * -1);
         recipient.movements.push(transferAmount);
-
         updateUI(currentAccount);
         inputTransferTo.value = inputTransferAmount.value = '';
     } else if (!recipient || currentAccount.owner === recipient?.owner) {
@@ -214,7 +219,6 @@ btnClose.addEventListener('click', function (e) {
     );
 
     if (user === currentAccount.userNameInitial && pin === currentAccount.pin) {
-        // удаляем аккаунт из массива с аккаунтами
         accounts.splice(accountIndex, 1);
 
         logout(); // выход с аккаунта
@@ -253,4 +257,11 @@ btnLoan.addEventListener('click', function (e) {
     } else {
         alert('Wrong amount of loan');
     }
+});
+
+// Событие для реализации сортировки транзакции
+btnSort.addEventListener('click', function (e) {
+    e.preventDefault();
+    sortState = !sortState;
+    displayMovements(currentAccount.movements, sortState);
 });
