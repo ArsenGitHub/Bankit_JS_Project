@@ -3,9 +3,22 @@
 // Data
 const account1 = {
     owner: 'Jonas Schmedtmann',
-    movements: [200, 450, -400, 3000, -650, -130, 70, 1300],
+    movements: [200, 455.23, -306.5, 25000, -642.21, -133.9, 79.97, 1300],
     interestRate: 1.2, // %
     pin: 1111,
+
+    movementsDates: [
+        '2019-11-18T21:31:17.178Z',
+        '2019-12-23T07:42:02.383Z',
+        '2020-01-28T09:15:04.904Z',
+        '2020-04-01T10:17:24.185Z',
+        '2020-05-08T14:11:59.604Z',
+        '2020-05-27T17:01:17.194Z',
+        '2020-07-11T23:36:17.929Z',
+        '2020-07-12T10:51:36.790Z',
+    ],
+    currency: 'EUR',
+    locale: 'pt-PT', // de-DE
 };
 
 const account2 = {
@@ -13,23 +26,22 @@ const account2 = {
     movements: [5000, 3400, -150, -790, -3210, -1000, 8500, -30],
     interestRate: 1.5,
     pin: 2222,
+
+    movementsDates: [
+        '2019-11-01T13:15:33.035Z',
+        '2019-11-30T09:48:16.867Z',
+        '2019-12-25T06:04:23.907Z',
+        '2020-01-25T14:18:46.235Z',
+        '2020-02-05T16:33:06.386Z',
+        '2020-04-10T14:43:26.374Z',
+        '2020-06-25T18:49:59.371Z',
+        '2020-07-26T12:01:20.894Z',
+    ],
+    currency: 'USD',
+    locale: 'en-US',
 };
 
-const account3 = {
-    owner: 'Steven Thomas Williams',
-    movements: [200, -200, 340, -300, -20, 50, 400, -460],
-    interestRate: 0.7,
-    pin: 3333,
-};
-
-const account4 = {
-    owner: 'Sarah Smith',
-    movements: [430, 1000, 700, 50, 90],
-    interestRate: 1,
-    pin: 4444,
-};
-
-const accounts = [account1, account2, account3, account4];
+const accounts = [account1, account2];
 
 // Elements
 const labelWelcome = document.querySelector('.welcome');
@@ -80,7 +92,9 @@ const displayMovements = function (movements, sort = false) {
           <div class="movements__type movements__type--${operation}">${
             index + 1
         } ${operation}</div>
-          <div class="movements__value">${mov} ${currentCurrency}</div>
+          <div class="movements__value">${mov.toFixed(
+              2
+          )} ${currentCurrency}</div>
       </div>
       `;
         containerMovements.insertAdjacentHTML('afterbegin', html);
@@ -93,7 +107,9 @@ const calcDisplayBalance = function (movements) {
         (accum, value) => accum + value,
         0
     );
-    labelBalance.textContent = `${currentAccount.balance} ${currentCurrency}`;
+    labelBalance.textContent = `${currentAccount.balance.toFixed(
+        2
+    )} ${currentCurrency}`;
 };
 
 // Функция рассчитывает суммарный депозит, снятие и процент "вклада" и выводит в отдельные окошки
@@ -110,9 +126,13 @@ const calcDisplaySummary = function (account) {
         .filter((interest) => interest >= 1)
         .reduce((accum, interest) => accum + interest, 0);
 
-    labelSumIn.textContent = `${depositsSum} ${currentCurrency}`;
-    labelSumOut.textContent = `${Math.abs(withdrawalSum)} ${currentCurrency}`;
-    labelSumInterest.textContent = `${interestSum} ${currentCurrency}`;
+    labelSumIn.textContent = `${depositsSum.toFixed(2)} ${currentCurrency}`;
+    labelSumOut.textContent = `${Math.abs(withdrawalSum).toFixed(
+        2
+    )} ${currentCurrency}`;
+    labelSumInterest.textContent = `${interestSum.toFixed(
+        2
+    )} ${currentCurrency}`;
 };
 
 // Функция возвращает инициалы пользователя в обьекты account(
@@ -179,7 +199,7 @@ document.querySelector('.logo').addEventListener('click', function (e) {
 btnTransfer.addEventListener('click', function (e) {
     e.preventDefault();
 
-    const transferAmount = Number(inputTransferAmount.value);
+    const transferAmount = +inputTransferAmount.value;
     const recipient = accounts.find(
         (account) =>
             account.owner ===
@@ -213,7 +233,7 @@ btnClose.addEventListener('click', function (e) {
     e.preventDefault();
 
     const user = inputCloseUsername.value.toLowerCase();
-    const pin = Number(inputClosePin.value);
+    const pin = +inputClosePin.value;
     const accountIndex = accounts.findIndex(
         (acc) => acc.userNameInitial === user
     );
@@ -235,7 +255,7 @@ btnClose.addEventListener('click', function (e) {
 btnLoan.addEventListener('click', function (e) {
     e.preventDefault();
 
-    const loanAmount = Number(inputLoanAmount.value);
+    const loanAmount = Math.floor(inputLoanAmount.value);
     const loanAgreement = currentAccount.movements.some(
         (money) => money >= loanAmount * 0.1
     );
@@ -265,3 +285,54 @@ btnSort.addEventListener('click', function (e) {
     sortState = !sortState;
     displayMovements(currentAccount.movements, sortState);
 });
+
+// Метод рассчета корня числа
+console.log(Math.sqrt(25)); //5
+console.log(25 ** (1 / 2)); //5
+console.log(8 ** (1 / 3)); //2
+
+// Метод выявления наибольшего  и наименьшего числа, приводит строки в числа(type coercion)
+console.log(Math.max(10, 20, -10, 24, 9, '30')); //30
+console.log(Math.max(10, '20px', -10, 24, 9, '30')); //NaN
+
+console.log(Math.min(10, 20, -10, 24, 9, '30')); //-10
+
+// Метод Math.random() возвращает псевдослучайное число с плавающей запятой из диапазона [0, 1)
+// Метод Math.trunc() обрезает(не округляет) число до целых
+console.log(Math.random()); // 0.0000214...
+console.log(Math.trunc(Math.random())); // 0
+console.log(Math.trunc(Math.random() * 5)); // 0 до 4
+
+// Функция для выбора диапазона(мин и макс) выводимого рандомного целого числа
+const minMaxInt = (min, max) =>
+    Math.trunc(Math.random() * (max - min) + 1) + min;
+// (max - min) - необходим, чтобы потом прибавить min, т.к. если рандом выдаст 0, то функция выдаст min,  если не 0, то -min + min взаимоуничтожатся
+// А +1 нужен, т.к trunc "обрезает" все десятичные числа, т.е. всегда итоговое число будет меньше на 1
+
+// МЕТОДЫ ОКРУГЛЕНИЯ ЦЕЛЫХ ЧИСЕЛ
+// Метод Math.round() Округление до целых чисел(приводит строки в числа(type coercion))
+console.log(Math.trunc(23.3)); //23 ---просто обрезает
+
+console.log(Math.round(23.5)); //24
+console.log(Math.round(23.4)); //23
+
+// Метод Math.ceil() Округление до целых чисел В БОЛЛЬШУЮ СТОРОНУ(приводит строки в числа(type coercion))
+console.log(Math.ceil(23.5)); //24
+console.log(Math.ceil(23.4)); //24
+
+// Метод Math.floor() Округление до целых чисел В МЕНЬШУЮ СТОРОНУ(приводит строки в числа(type coercion))
+console.log(Math.floor(23.5)); //23
+console.log(Math.floor(23.4)); //23
+console.log(Math.floor('23.4')); //23
+
+// Отличия Math.floor() и Math.trunc()
+console.log(Math.floor(-5.5)); //-6 -- т.к. округляет в МЕНЬШУЮ СТОРОНУ
+console.log(Math.trunc(-5.5)); //-5 - т.к. просто обрезает
+
+// МЕТОДЫ ОКРУГЛЕНИЯ ДЕСЯТИЧНЫХ ЧИСЕЛ
+// Св-во .toFixed('кол-во чисел после запятой'), возвращает СТРОКУ
+console.log((2.753).toFixed(0)); // "3"
+console.log((2.453).toFixed(0)); // "2"
+console.log((2.753).toFixed(1)); // "2.8"
+console.log((2.753).toFixed(3)); // "2.753"
+console.log(+(2.753).toFixed(4)); // 2.7530 -- уже число, т.к. "+"
