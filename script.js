@@ -85,18 +85,42 @@ const displayMovements = function (movements, sort = false) {
 
     containerMovements.innerHTML = '';
 
+    // Текущее время
+    const now = new Date();
+    const dayNow = `${now.getDate()}`.padStart(2, 0);
+    const monthNow = `${now.getMonth() + 1}`.padStart(2, 0);
+    const yearNow = now.getFullYear();
+    const hourNow = `${now.getHours()}`.padStart(2, 0);
+    const minNow = `${now.getMinutes()}`.padStart(2, 0);
+    labelDate.textContent = `${dayNow}/${monthNow}/${yearNow} ${hourNow}:${minNow}`;
+
     movs.forEach(function (mov, index) {
         const operation = mov > 0 ? 'deposit' : 'withdrawal';
+
+        // Даты переводов
+        const date = new Date(currentAccount.movementsDates[index]);
+        const day = `${date.getDate()}`.padStart(2, 0);
+        const month = `${date.getMonth() + 1}`.padStart(2, 0);
+        const year = date.getFullYear();
+
+        const formatedDate = `${day}/${month}/${year}`;
+
         const html = `
       <div class="movements__row">
           <div class="movements__type movements__type--${operation}">${
             index + 1
         } ${operation}</div>
+        <div class="movements__date">${
+            dayNow - day <= 3 && year === yearNow
+                ? dayNow - day + ' days ago'
+                : formatedDate
+        }</div>
           <div class="movements__value">${mov.toFixed(
               2
           )} ${currentCurrency}</div>
       </div>
       `;
+
         containerMovements.insertAdjacentHTML('afterbegin', html);
     });
 };
@@ -216,8 +240,14 @@ btnTransfer.addEventListener('click', function (e) {
         transferAmount <= currentAccount.balance &&
         transferAmount > 0
     ) {
+        // Добавляем в массивы перевод
         currentAccount.movements.push(transferAmount * -1);
         recipient.movements.push(transferAmount);
+
+        //Добавляем новые даты переводов
+        currentAccount.movementsDates.push(new Date().toISOString());
+        recipient.movementsDates.push(new Date().toISOString());
+
         updateUI(currentAccount);
         inputTransferTo.value = inputTransferAmount.value = '';
     } else if (!recipient || currentAccount.owner === recipient?.owner) {
@@ -260,7 +290,10 @@ btnLoan.addEventListener('click', function (e) {
         (money) => money >= loanAmount * 0.1
     );
     if (loanAmount > 0 && loanAgreement) {
+        // Добавляем взятие кредита в переводы
         currentAccount.movements.push(loanAmount);
+        // Добавляем новую дату переводы
+        currentAccount.movementsDates.push(new Date().toISOString());
         inputLoanAmount.value = '';
 
         updateUI(currentAccount);
@@ -285,54 +318,3 @@ btnSort.addEventListener('click', function (e) {
     sortState = !sortState;
     displayMovements(currentAccount.movements, sortState);
 });
-
-// Метод рассчета корня числа
-console.log(Math.sqrt(25)); //5
-console.log(25 ** (1 / 2)); //5
-console.log(8 ** (1 / 3)); //2
-
-// Метод выявления наибольшего  и наименьшего числа, приводит строки в числа(type coercion)
-console.log(Math.max(10, 20, -10, 24, 9, '30')); //30
-console.log(Math.max(10, '20px', -10, 24, 9, '30')); //NaN
-
-console.log(Math.min(10, 20, -10, 24, 9, '30')); //-10
-
-// Метод Math.random() возвращает псевдослучайное число с плавающей запятой из диапазона [0, 1)
-// Метод Math.trunc() обрезает(не округляет) число до целых
-console.log(Math.random()); // 0.0000214...
-console.log(Math.trunc(Math.random())); // 0
-console.log(Math.trunc(Math.random() * 5)); // 0 до 4
-
-// Функция для выбора диапазона(мин и макс) выводимого рандомного целого числа
-const minMaxInt = (min, max) =>
-    Math.trunc(Math.random() * (max - min) + 1) + min;
-// (max - min) - необходим, чтобы потом прибавить min, т.к. если рандом выдаст 0, то функция выдаст min,  если не 0, то -min + min взаимоуничтожатся
-// А +1 нужен, т.к trunc "обрезает" все десятичные числа, т.е. всегда итоговое число будет меньше на 1
-
-// МЕТОДЫ ОКРУГЛЕНИЯ ЦЕЛЫХ ЧИСЕЛ
-// Метод Math.round() Округление до целых чисел(приводит строки в числа(type coercion))
-console.log(Math.trunc(23.3)); //23 ---просто обрезает
-
-console.log(Math.round(23.5)); //24
-console.log(Math.round(23.4)); //23
-
-// Метод Math.ceil() Округление до целых чисел В БОЛЛЬШУЮ СТОРОНУ(приводит строки в числа(type coercion))
-console.log(Math.ceil(23.5)); //24
-console.log(Math.ceil(23.4)); //24
-
-// Метод Math.floor() Округление до целых чисел В МЕНЬШУЮ СТОРОНУ(приводит строки в числа(type coercion))
-console.log(Math.floor(23.5)); //23
-console.log(Math.floor(23.4)); //23
-console.log(Math.floor('23.4')); //23
-
-// Отличия Math.floor() и Math.trunc()
-console.log(Math.floor(-5.5)); //-6 -- т.к. округляет в МЕНЬШУЮ СТОРОНУ
-console.log(Math.trunc(-5.5)); //-5 - т.к. просто обрезает
-
-// МЕТОДЫ ОКРУГЛЕНИЯ ДЕСЯТИЧНЫХ ЧИСЕЛ
-// Св-во .toFixed('кол-во чисел после запятой'), возвращает СТРОКУ
-console.log((2.753).toFixed(0)); // "3"
-console.log((2.453).toFixed(0)); // "2"
-console.log((2.753).toFixed(1)); // "2.8"
-console.log((2.753).toFixed(3)); // "2.753"
-console.log(+(2.753).toFixed(4)); // 2.7530 -- уже число, т.к. "+"
