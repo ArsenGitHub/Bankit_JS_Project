@@ -15,7 +15,7 @@ const account1 = {
         '2020-05-08T14:11:59.604Z',
         '2020-05-27T17:01:17.194Z',
         '2020-07-11T23:36:17.929Z',
-        '2020-07-12T10:51:36.790Z',
+        '2023-03-09T10:51:36.790Z',
     ],
     currency: 'EUR',
     locale: 'pt-PT', // de-DE
@@ -33,9 +33,9 @@ const account2 = {
         '2019-12-25T06:04:23.907Z',
         '2020-01-25T14:18:46.235Z',
         '2020-02-05T16:33:06.386Z',
-        '2020-04-10T14:43:26.374Z',
-        '2020-06-25T18:49:59.371Z',
-        '2020-07-26T12:01:20.894Z',
+        '2023-01-10T14:43:26.374Z',
+        '2023-03-03T18:49:59.371Z',
+        '2023-03-08T12:01:20.894Z',
     ],
     currency: 'USD',
     locale: 'en-US',
@@ -79,6 +79,32 @@ let currentCurrency = 'RUB';
 // Хранит состояние сортировки переводов(при клике на сортировку => true)
 let sortState = false;
 
+// Функция для форматирования даты в нужный формат
+const formatDate = function (yourDate) {
+    const date = yourDate ? new Date(yourDate) : new Date();
+    const day = `${date.getDate()}`.padStart(2, 0);
+    const month = `${date.getMonth() + 1}`.padStart(2, 0);
+    const year = date.getFullYear();
+    const hour = `${date.getHours()}`.padStart(2, 0);
+    const min = `${date.getMinutes()}`.padStart(2, 0);
+
+    const passedDays = Math.round((new Date() - date) / (1000 * 60 * 60 * 24));
+
+    let dateTxt;
+
+    if (passedDays === 0) {
+        dateTxt = 'Today';
+    } else if (passedDays === 1) {
+        dateTxt = 'Yesterday';
+    } else if (passedDays <= 7) {
+        dateTxt = `${passedDays} days ago`;
+    } else {
+        dateTxt = `${day}/${month}/${year}`;
+    }
+
+    return yourDate ? dateTxt : `${day}/${month}/${year} ${hour}:${min}`;
+};
+
 // Функция будет отображать снятие и поступление средств на счет и будет принимать данные из массива
 const displayMovements = function (movements, sort = false) {
     const movs = sort ? movements.slice().sort((a, b) => a - b) : movements;
@@ -86,35 +112,20 @@ const displayMovements = function (movements, sort = false) {
     containerMovements.innerHTML = '';
 
     // Текущее время
-    const now = new Date();
-    const dayNow = `${now.getDate()}`.padStart(2, 0);
-    const monthNow = `${now.getMonth() + 1}`.padStart(2, 0);
-    const yearNow = now.getFullYear();
-    const hourNow = `${now.getHours()}`.padStart(2, 0);
-    const minNow = `${now.getMinutes()}`.padStart(2, 0);
-    labelDate.textContent = `${dayNow}/${monthNow}/${yearNow} ${hourNow}:${minNow}`;
+    labelDate.textContent = formatDate();
 
     movs.forEach(function (mov, index) {
         const operation = mov > 0 ? 'deposit' : 'withdrawal';
 
         // Даты переводов
-        const date = new Date(currentAccount.movementsDates[index]);
-        const day = `${date.getDate()}`.padStart(2, 0);
-        const month = `${date.getMonth() + 1}`.padStart(2, 0);
-        const year = date.getFullYear();
-
-        const formatedDate = `${day}/${month}/${year}`;
+        const formatedDate = formatDate(currentAccount.movementsDates[index]);
 
         const html = `
       <div class="movements__row">
           <div class="movements__type movements__type--${operation}">${
             index + 1
         } ${operation}</div>
-        <div class="movements__date">${
-            dayNow - day <= 3 && year === yearNow
-                ? dayNow - day + ' days ago'
-                : formatedDate
-        }</div>
+        <div class="movements__date">${formatedDate}</div>
           <div class="movements__value">${mov.toFixed(
               2
           )} ${currentCurrency}</div>
