@@ -70,23 +70,28 @@ const inputLoanAmount = document.querySelector('.form__input--loan-amount');
 const inputCloseUsername = document.querySelector('.form__input--user');
 const inputClosePin = document.querySelector('.form__input--pin');
 
-// Хранит текущий аккаунт
-let currentAccount;
-
-// Хранит текущую валюту
-let currentCurrency = 'RUB';
+// Хранит текущий аккаунт, таймер
+let currentAccount, timer;
 
 // Хранит состояние сортировки переводов(при клике на сортировку => true)
 let sortState = false;
 
-// Функция для форматирования даты в нужный формат
-const formatDate = function (yourDate) {
+// Функция для интеранационализации даты
+const formatDate = function (yourDate, locale) {
     const date = yourDate ? new Date(yourDate) : new Date();
     const day = `${date.getDate()}`.padStart(2, 0);
     const month = `${date.getMonth() + 1}`.padStart(2, 0);
     const year = date.getFullYear();
     const hour = `${date.getHours()}`.padStart(2, 0);
     const min = `${date.getMinutes()}`.padStart(2, 0);
+
+    const options = {
+        hour: 'numeric',
+        minute: 'numeric',
+        day: 'numeric',
+        month: 'numeric',
+        year: 'numeric',
+    };
 
     const passedDays = Math.round((new Date() - date) / (1000 * 60 * 60 * 24));
 
@@ -99,10 +104,21 @@ const formatDate = function (yourDate) {
     } else if (passedDays <= 7) {
         dateTxt = `${passedDays} days ago`;
     } else {
-        dateTxt = `${day}/${month}/${year}`;
+        dateTxt = new Intl.DateTimeFormat(locale).format(date);
     }
 
-    return yourDate ? dateTxt : `${day}/${month}/${year} ${hour}:${min}`;
+    return yourDate
+        ? dateTxt
+        : new Intl.DateTimeFormat(locale, options).format(date);
+};
+
+// Функция интернационализации чисел и валюты
+const formatCurrency = function (money, locale, currency) {
+    return Intl.NumberFormat(locale, {
+        style: 'currency',
+        currencyDisplay: 'symbol',
+        currency: currency,
+    }).format(money);
 };
 
 // Функция будет отображать снятие и поступление средств на счет и будет принимать данные из массива
@@ -112,13 +128,23 @@ const displayMovements = function (movements, sort = false) {
     containerMovements.innerHTML = '';
 
     // Текущее время
-    labelDate.textContent = formatDate();
+    labelDate.textContent = formatDate(0, currentAccount.locale);
 
     movs.forEach(function (mov, index) {
         const operation = mov > 0 ? 'deposit' : 'withdrawal';
 
-        // Даты переводов
-        const formatedDate = formatDate(currentAccount.movementsDates[index]);
+        // Интернационализация даты переводов
+        const formatedDate = formatDate(
+            currentAccount.movementsDates[index],
+            currentAccount.locale
+        );
+
+        // Интернационализация денег, курса чисел
+        const formatedMoney = formatCurrency(
+            mov,
+            currentAccount.locale,
+            currentAccount.currency
+        );
 
         const html = `
       <div class="movements__row">
@@ -126,9 +152,7 @@ const displayMovements = function (movements, sort = false) {
             index + 1
         } ${operation}</div>
         <div class="movements__date">${formatedDate}</div>
-          <div class="movements__value">${mov.toFixed(
-              2
-          )} ${currentCurrency}</div>
+          <div class="movements__value">${formatedMoney}</div>
       </div>
       `;
 
@@ -142,9 +166,11 @@ const calcDisplayBalance = function (movements) {
         (accum, value) => accum + value,
         0
     );
-    labelBalance.textContent = `${currentAccount.balance.toFixed(
-        2
-    )} ${currentCurrency}`;
+    labelBalance.textContent = formatCurrency(
+        currentAccount.balance,
+        currentAccount.locale,
+        currentAccount.currency
+    );
 };
 
 // Функция рассчитывает суммарный депозит, снятие и процент "вклада" и выводит в отдельные окошки
@@ -161,13 +187,23 @@ const calcDisplaySummary = function (account) {
         .filter((interest) => interest >= 1)
         .reduce((accum, interest) => accum + interest, 0);
 
-    labelSumIn.textContent = `${depositsSum.toFixed(2)} ${currentCurrency}`;
-    labelSumOut.textContent = `${Math.abs(withdrawalSum).toFixed(
-        2
-    )} ${currentCurrency}`;
-    labelSumInterest.textContent = `${interestSum.toFixed(
-        2
-    )} ${currentCurrency}`;
+    labelSumIn.textContent = formatCurrency(
+        depositsSum,
+        currentAccount.locale,
+        currentAccount.currency
+    );
+
+    labelSumOut.textContent = formatCurrency(
+        Math.abs(withdrawalSum),
+        currentAccount.locale,
+        currentAccount.currency
+    );
+
+    labelSumInterest.textContent = formatCurrency(
+        interestSum,
+        currentAccount.locale,
+        currentAccount.currency
+    );
 };
 
 // Функция возвращает инициалы пользователя в обьекты account(
@@ -207,6 +243,29 @@ const logout = function () {
 // Добавляем инициалы аккаунтов в обьекты аккаунтов
 createUserInitial(accounts);
 
+// Функция выхода с аккаунта по истечению времени
+const logoutTimer = function () {
+    let time = 1000 * 60 * 0.5;
+    const tick = function () {
+        if (time > 0) {
+            time -= 1000;
+            const startTime = new Date(time);
+            const min = `${startTime.getMinutes()}`.padStart(2, 0);
+            const sec = `${startTime.getSeconds()}`.padStart(2, 0);
+
+            labelTimer.textContent = `${min}:${sec}`;
+        } else {
+            clearInterval(timer);
+            logout();
+        }
+    };
+
+    tick();
+    const timer = setInterval(tick, 1000);
+
+    return timer;
+};
+
 // Событие входа в аккаунт
 btnLogin.addEventListener('click', function (e) {
     e.preventDefault();
@@ -220,6 +279,11 @@ btnLogin.addEventListener('click', function (e) {
         labelWelcome.textContent = `Welcome back ${currentAccount.owner}`;
         containerApp.style.opacity = '1';
         loginForm.style.opacity = 0;
+
+        // Функция выхода с аккаунта по истечению времени
+        // Если timer уже сущ-т(таймер уже запущен), обнуляем и запускаем новый
+        if (timer) clearInterval(timer);
+        timer = logoutTimer();
     } else {
         alert('Wrong User name or password!');
     }
@@ -258,6 +322,10 @@ btnTransfer.addEventListener('click', function (e) {
         //Добавляем новые даты переводов
         currentAccount.movementsDates.push(new Date().toISOString());
         recipient.movementsDates.push(new Date().toISOString());
+
+        // Обновляем счетчик времени
+        clearInterval(timer);
+        timer = logoutTimer();
 
         updateUI(currentAccount);
         inputTransferTo.value = inputTransferAmount.value = '';
@@ -307,6 +375,10 @@ btnLoan.addEventListener('click', function (e) {
         currentAccount.movementsDates.push(new Date().toISOString());
         inputLoanAmount.value = '';
 
+        // Обновляем счетчик времени
+        clearInterval(timer);
+        timer = logoutTimer();
+
         updateUI(currentAccount);
     } else if (!loanAgreement) {
         inputLoanAmount.value = '';
@@ -329,3 +401,22 @@ btnSort.addEventListener('click', function (e) {
     sortState = !sortState;
     displayMovements(currentAccount.movements, sortState);
 });
+
+// const labelTimer = document.querySelector('.timer');
+
+// const logout = function () {
+//     loginForm.style.opacity = 1;
+//     containerApp.style.opacity = '0';
+//     labelWelcome.textContent = `Log in to get started`;
+
+//     inputTransferTo.value =
+//         inputTransferAmount.value =
+//         inputLoginUsername.value =
+//         inputLoginPin.value =
+//         inputLoanAmount.value =
+//         inputCloseUsername.value =
+//         inputClosePin.value =
+//             '';
+// };
+
+console.log(new Date(1000 * 60 * 5));
